@@ -3,239 +3,257 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1e4028">
-<meta name="description" content="БЛИЖЕ — игра для сближения.">
+<meta name="theme-color" content="#1a4830">
+<meta name="description" content="БЛИЖЕ — 50 карточек с вопросами для тёплого разговора.">
 <title>БЛИЖЕ — игра для сближения</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Neucha&display=swap" rel="stylesheet">
-
 <link rel="preload" href="questions.json" as="fetch" crossorigin>
 <link rel="preload" href="back.webp" as="image" type="image/webp">
 
 <style>
   :root{
-    --felt-1:#3a7a4a;
-    --felt-2:#1e4028;
-    --felt-3:#0a1a10;
-    --card-radius:14px;
-    --card-shadow:0 10px 22px rgba(0,0,0,.5), 0 2px 5px rgba(0,0,0,.35);
+    /* Цвет сукна. Хочешь красный — поменяй на:
+       --felt-1:#7a1f24; --felt-2:#4a0f14; --felt-3:#210509;  */
+    --felt-1:#2d6b47;
+    --felt-2:#1a4830;
+    --felt-3:#0a2113;
+
+    --paper:#ffffff;
+    --ink:#111111;
+    --radius:18px;
+    --shadow:0 22px 44px -14px rgba(0,0,0,.65);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{
     margin:0;
     min-height:100dvh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:24px;
-    touch-action:manipulation;
-    font:16px/1.4 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-    color:#fff;
-    overflow:hidden;
+    display:grid;
+    place-items:center;
+    padding:24px max(16px,env(safe-area-inset-left))
+            calc(24px + env(safe-area-inset-bottom))
+            max(16px,env(safe-area-inset-right));
     background:
-      repeating-linear-gradient(45deg, rgba(0,0,0,.03) 0 1px, transparent 1px 3px),
-      repeating-linear-gradient(-45deg, rgba(0,0,0,.03) 0 1px, transparent 1px 3px),
-      radial-gradient(ellipse 130% 90% at 50% 45%, var(--felt-1) 0%, var(--felt-2) 55%, var(--felt-3) 100%);
-    background-attachment:fixed;
+      radial-gradient(ellipse at 50% 35%,
+        var(--felt-1) 0%,
+        var(--felt-2) 55%,
+        var(--felt-3) 100%);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    color:#fff;
+    overflow-x:hidden;
+    position:relative;
   }
+  /* Тканевая текстура */
+  body::before{
+    content:"";
+    position:fixed;inset:0;
+    background-image:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.018) 0 2px, transparent 2px 4px),
+      repeating-linear-gradient(-45deg, rgba(0,0,0,.035) 0 2px, transparent 2px 4px);
+    pointer-events:none;
+    z-index:0;
+  }
+  /* Виньетка */
   body::after{
     content:"";
     position:fixed;inset:0;
+    background:radial-gradient(ellipse at 50% 45%,
+      transparent 40%, rgba(0,0,0,.5) 100%);
     pointer-events:none;
-    background:radial-gradient(ellipse 100% 80% at 50% 50%, transparent 55%, rgba(0,0,0,.5) 100%);
+    z-index:0;
   }
 
+  /* ------- Стол ------- */
   .table{
     position:relative;
     z-index:1;
-    display:flex;
+    display:grid;
+    grid-template-columns:auto auto auto;
+    grid-template-areas:"deck card discard";
     align-items:center;
+    gap:clamp(16px,4vw,44px);
+    width:100%;
+    max-width:900px;
     justify-content:center;
-    gap:clamp(24px, 7vw, 56px);
-    padding:20px;
   }
 
-  .pile{
-    position:relative;
-    width:min(38vw, 155px);
-    aspect-ratio:2/3;
-  }
-
-  /* ---------- Колода ---------- */
+  /* ------- Колода ------- */
   .deck{
+    grid-area:deck;
+    position:relative;
+    width:min(22vw, 110px);
+    aspect-ratio:2/3;
+    padding:0;
+    border:none;
+    background:transparent;
+    cursor:pointer;
+    transition:transform .15s ease;
+  }
+  .deck:hover{transform:translateY(-3px)}
+  .deck:active{transform:translateY(0)}
+  .deck:focus-visible{outline:3px solid rgba(255,255,255,.85);outline-offset:8px;border-radius:var(--radius)}
+  .deck .layer{
+    position:absolute;inset:0;
+    border-radius:var(--radius);
+    background:url('back.webp') center/cover no-repeat,#efe9dc;
+    border:1px solid rgba(0,0,0,.18);
+    box-shadow:0 10px 22px -10px rgba(0,0,0,.65);
+  }
+  .deck .layer:nth-child(1){transform:translate(-4px, 4px)  rotate(-1.2deg)}
+  .deck .layer:nth-child(2){transform:translate(-2px, 2px)  rotate(-0.4deg)}
+  .deck .layer:nth-child(3){transform:translate(0,    0)    rotate(0.3deg)}
+
+  /* ------- Активная карта ------- */
+  .scene{
+    grid-area:card;
+    width:min(50vw, 300px);
+    aspect-ratio:2/3;
+    perspective:1600px;
+  }
+  .card{
     all:unset;
     display:block;
     position:relative;
     width:100%;
     height:100%;
+    border-radius:var(--radius);
     cursor:pointer;
-    border-radius:var(--card-radius);
-    transition:transform .18s ease;
+    transform-style:preserve-3d;
+    transition:transform .75s cubic-bezier(.175,.885,.32,1.275);
+    box-shadow:var(--shadow);
   }
-  .deck:hover{transform:translateY(-2px)}
-  .deck:active{transform:translateY(0) scale(.985)}
-  .deck:focus-visible{outline:3px solid #fff;outline-offset:6px;border-radius:var(--card-radius)}
+  .card.is-flipped{transform:rotateY(180deg)}
+  .card:focus-visible{outline:3px solid rgba(255,255,255,.85);outline-offset:8px;border-radius:var(--radius)}
 
-  .deck-card{
-    position:absolute;
-    inset:0;
-    z-index:calc(var(--i) * -1);
-    border-radius:var(--card-radius);
-    background:url('back.webp') center/cover no-repeat, #f4f1ea;
-    box-shadow:var(--card-shadow);
-    transform:translate(calc(var(--i) * 1.2px), calc(var(--i) * -1.6px));
-  }
-
-  /* ---------- Сброс ---------- */
-  .discard{
-    position:relative;
-    width:100%;
-    height:100%;
-    cursor:pointer;
-  }
-  .discard:focus-visible{outline:3px solid #fff;outline-offset:6px;border-radius:var(--card-radius)}
-
-  .discard-slot{
+  .card-face{
     position:absolute;inset:0;
-    border-radius:var(--card-radius);
-    border:2px dashed rgba(255,255,255,.22);
-    background:rgba(0,0,0,.14);
-    transition:opacity .3s;
+    border-radius:var(--radius);
+    overflow:hidden;
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    border:1px solid rgba(0,0,0,.18);
   }
-
-  .discard-edge{
-    position:absolute;inset:0;
-    z-index:calc(10 + var(--i));
-    border-radius:var(--card-radius);
-    background:#ece6d8;
-    box-shadow:0 2px 5px rgba(0,0,0,.35);
-    transform:translate(calc(var(--i) * -2px), calc(var(--i) * 2px));
-    opacity:0;
-    transition:opacity .4s ease;
+  .card-back{
+    background:url('back.webp') center/cover no-repeat,#efe9dc;
   }
-
-  .current{
-    position:absolute;inset:0;
-    z-index:20;
-    border-radius:var(--card-radius);
-    background:#fff;                     /* чисто белый, без градиентов */
-    box-shadow:var(--card-shadow);
+  .card-front{
+    transform:rotateY(180deg);
+    background:var(--paper);
+    color:var(--ink);
     display:flex;
     align-items:center;
     justify-content:center;
-    padding:14% 11%;
+    padding:9% 8%;
     text-align:center;
-    opacity:0;
-    transform:scale(.9) rotate(-3deg);
-    pointer-events:none;
-    transition:opacity .3s ease;
   }
-  .current.is-visible{opacity:1}
-
-  .current.is-dealing{
-    animation:dealIn .58s cubic-bezier(.175,.885,.32,1.275);
-  }
-  @keyframes dealIn{
-    0%   {opacity:0; transform:translate(-70px,22px) rotate(-22deg) scale(.82)}
-    55%  {opacity:1; transform:translate(7px,-4px) rotate(3deg) scale(1.02)}
-    100% {opacity:1; transform:translate(0,0) rotate(0) scale(1)}
-  }
-
-  /* состояние сброса */
-  .discard:not(.has-cards) .discard-slot{opacity:1}
-  .discard.has-cards .discard-slot{opacity:0}
-  .discard.has-cards .discard-edge{opacity:.95}
-
   .question{
     display:block;
     margin:0;
     font-family:'Neucha','Segoe Print','Comic Sans MS',cursive;
     font-weight:400;
-    font-size:clamp(13px, 3.5vw, 17px);
-    line-height:1.35;
-    color:#15110e;
-    letter-spacing:.01em;
+    font-size:clamp(20px, 5.2vw, 28px);
+    line-height:1.5;
+    color:var(--ink);
     text-wrap:balance;
   }
 
-  /* ---------- Подсказка ---------- */
-  .hint{
-    position:fixed;
-    bottom:max(22px, env(safe-area-inset-bottom));
-    left:50%;
-    transform:translateX(-50%);
-    z-index:2;
-    font-size:.74rem;
-    letter-spacing:.2em;
-    text-transform:uppercase;
-    color:rgba(255,255,255,.6);
-    pointer-events:none;
-    transition:opacity .4s ease;
+  /* ------- Сброс ------- */
+  .discard{
+    grid-area:discard;
+    position:relative;
+    width:min(22vw, 110px);
+    aspect-ratio:2/3;
   }
-  .hint.is-hidden{opacity:0}
+  .discard::after{
+    content:"";
+    position:absolute;inset:0;
+    border-radius:var(--radius);
+    border:2px dashed rgba(255,255,255,.14);
+    pointer-events:none;
+  }
+  .discard .layer{
+    position:absolute;inset:0;
+    border-radius:var(--radius);
+    background:var(--paper);
+    border:1px solid rgba(0,0,0,.14);
+    box-shadow:0 6px 16px -8px rgba(0,0,0,.55);
+    transform-origin:center;
+    animation:drop .38s ease-out both;
+  }
+  @keyframes drop{
+    from{opacity:0; transform:translateY(-22px) scale(.85) rotate(var(--rot,0deg))}
+    to  {opacity:1; transform:translateY(0)     scale(1)   rotate(var(--rot,0deg))}
+  }
 
-  @media (prefers-reduced-motion:reduce){
-    .current{transition:none}
-    .current.is-dealing{animation:none; opacity:1; transform:none}
+  /* ------- Мобильная раскладка ------- */
+  @media (max-width: 640px){
+    .table{
+      grid-template-columns:1fr 1fr;
+      grid-template-areas:
+        "deck discard"
+        "card card";
+      row-gap:22px;
+      column-gap:14px;
+      justify-items:center;
+      max-width:440px;
+    }
+    .deck, .discard{width:min(26vw, 96px)}
+    .scene{width:min(80vw, 320px); margin-top:6px}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .card{transition-duration:.001ms}
     .deck{transition:none}
+    .discard .layer{animation-duration:.001ms}
   }
 </style>
 </head>
 <body>
 
-  <main class="table">
+  <div class="table">
 
-    <!-- Колода -->
-    <div class="pile">
-      <button class="deck" id="deck" type="button" aria-label="Тянуть карту из колоды">
-        <span class="deck-card" style="--i:5" aria-hidden="true"></span>
-        <span class="deck-card" style="--i:4" aria-hidden="true"></span>
-        <span class="deck-card" style="--i:3" aria-hidden="true"></span>
-        <span class="deck-card" style="--i:2" aria-hidden="true"></span>
-        <span class="deck-card" style="--i:1" aria-hidden="true"></span>
-        <span class="deck-card" style="--i:0" aria-hidden="true"></span>
+    <button class="deck" id="deckBtn" type="button" aria-label="Колода. Тянуть карту">
+      <span class="layer" aria-hidden="true"></span>
+      <span class="layer" aria-hidden="true"></span>
+      <span class="layer" aria-hidden="true"></span>
+    </button>
+
+    <div class="scene">
+      <button class="card" id="card" type="button" aria-label="Карта. Нажмите, чтобы перевернуть">
+        <span class="card-face card-back" aria-hidden="true"></span>
+        <span class="card-face card-front">
+          <span class="question" id="questionText" aria-live="polite">Тяни карту</span>
+        </span>
       </button>
     </div>
 
-    <!-- Сброс -->
-    <div class="pile">
-      <div class="discard" id="discard" role="button" tabindex="0" aria-label="Стопка сброса">
-        <span class="discard-slot" aria-hidden="true"></span>
-        <span class="discard-edge" style="--i:3" aria-hidden="true"></span>
-        <span class="discard-edge" style="--i:2" aria-hidden="true"></span>
-        <span class="discard-edge" style="--i:1" aria-hidden="true"></span>
-        <div class="current" id="currentCard">
-          <span class="question" id="questionText" aria-live="polite"></span>
-        </div>
-      </div>
-    </div>
+    <div class="discard" id="discardPile" aria-hidden="true"></div>
 
-  </main>
-
-  <div class="hint" id="hint">Нажми на колоду</div>
+  </div>
 
 <script>
 (() => {
   'use strict';
 
-  const deck        = document.getElementById('deck');
-  const discard     = document.getElementById('discard');
-  const currentCard = document.getElementById('currentCard');
-  const questionEl  = document.getElementById('questionText');
-  const hint        = document.getElementById('hint');
+  const card = document.getElementById('card');
+  const questionEl = document.getElementById('questionText');
+  const deckBtn = document.getElementById('deckBtn');
+  const discardPile = document.getElementById('discardPile');
 
-  const DEAL_MS = 600;
+  const FLIP_MS = 750;
+  const MAX_DISCARD_LAYERS = 8;
 
   const state = {
     questions: [],
     deck: [],
     index: 0,
+    isFlipped: false,
     isAnimating: false,
     ready: false,
-    firstDraw: true
+    currentText: ''
   };
 
   function shuffle(a){
@@ -245,52 +263,67 @@
     }
     return a;
   }
-
-  function sentenceCase(text){
-    const t = String(text).trim().toLowerCase();
-    if (!t) return '';
-    return t.charAt(0).toUpperCase() + t.slice(1);
-  }
-
   function resetDeck(){
     state.deck = shuffle(state.questions.slice());
     state.index = 0;
   }
-
-  function draw(){
-    if (!state.ready || state.isAnimating) return;
+  function sentenceCase(text){
+    const t = String(text).trim().toLowerCase();
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
+  }
+  function lock(ms){
     state.isAnimating = true;
-    setTimeout(() => { state.isAnimating = false; }, DEAL_MS);
+    setTimeout(() => { state.isAnimating = false; }, ms);
+  }
 
-    if (state.index >= state.deck.length) resetDeck();
-    const raw = state.deck[state.index++];
-    questionEl.textContent = sentenceCase(raw);
+  function pushDiscard(){
+    const layer = document.createElement('span');
+    layer.className = 'layer';
+    const rot = (Math.random() * 10 - 5).toFixed(2) + 'deg';
+    layer.style.setProperty('--rot', rot);
+    discardPile.appendChild(layer);
 
-    // перезапуск анимации раздачи
-    currentCard.classList.remove('is-dealing');
-    void currentCard.offsetWidth;
-    currentCard.classList.add('is-visible', 'is-dealing');
-
-    discard.classList.add('has-cards');
-
-    if (state.firstDraw){
-      state.firstDraw = false;
-      hint.classList.add('is-hidden');
+    const layers = discardPile.querySelectorAll('.layer');
+    if (layers.length > MAX_DISCARD_LAYERS){
+      layers[0].remove();
     }
   }
 
-  deck.addEventListener('click', draw);
+  function showQuestion(){
+    if (state.index >= state.deck.length) resetDeck();
+    const text = sentenceCase(state.deck[state.index++]);
 
-  discard.addEventListener('click', () => {
-    if (!state.ready) return;
-    if (state.firstDraw) return;   // пустой сброс — не реагируем
-    draw();
-  });
-  discard.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' '){
-      e.preventDefault();
-      discard.click();
+    state.currentText = text;
+    questionEl.textContent = text;
+    card.classList.add('is-flipped');
+    card.setAttribute('aria-label', 'Карта с вопросом. Нажмите, чтобы убрать в сброс');
+    state.isFlipped = true;
+  }
+
+  function hideQuestion(){
+    if (state.currentText){
+      pushDiscard();
+      state.currentText = '';
     }
+    card.classList.remove('is-flipped');
+    card.setAttribute('aria-label', 'Карта. Нажмите, чтобы перевернуть');
+    state.isFlipped = false;
+    // текст оставляем до конца анимации, потом сбрасываем
+    setTimeout(() => {
+      if (!state.isFlipped) questionEl.textContent = 'Тяни карту';
+    }, FLIP_MS / 2);
+  }
+
+  function onDraw(){
+    if (!state.ready || state.isAnimating) return;
+    lock(FLIP_MS);
+    state.isFlipped ? hideQuestion() : showQuestion();
+  }
+
+  card.addEventListener('click', onDraw);
+  deckBtn.addEventListener('click', () => {
+    if (!state.ready || state.isFlipped) return;
+    onDraw();
   });
 
   async function init(){
@@ -299,9 +332,9 @@
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       const list = Array.isArray(data)
-        ? data.filter(q => typeof q === 'string' && q.trim().length > 0)
+        ? data.filter(q => typeof q === 'string' && q.trim().length)
         : [];
-      if (!list.length) throw new Error('Пустой список вопросов');
+      if (!list.length) throw new Error('Пустой список');
 
       state.questions = list;
       resetDeck();
@@ -309,8 +342,6 @@
     } catch (err){
       console.error('Ошибка загрузки:', err);
       questionEl.textContent = 'Не удалось загрузить вопросы';
-      currentCard.classList.add('is-visible');
-      hint.textContent = 'Ошибка загрузки';
     }
   }
 
