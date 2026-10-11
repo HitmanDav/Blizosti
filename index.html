@@ -1,1 +1,299 @@
-<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>Колода «Близость»</title><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#1a1a1a;font-family:Arial,sans-serif;padding:20px;gap:40px;overflow:hidden}.scene{width:min(85vw,350px);height:min(127.5vw,525px);perspective:1200px}.card{width:100%;height:100%;position:relative;transition:transform .7s cubic-bezier(.175,.885,.32,1.275);transform-style:preserve-3d;cursor:pointer}.card.is-flipped{transform:rotateY(180deg)}.card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:20px;box-shadow:0 15px 35px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:30px;text-align:center}.card-back{background:url('back.png') center/cover no-repeat,#222}.card-front{background:#fff;color:#1a1a1a;transform:rotateY(180deg);font-size:1.3rem;font-weight:600;line-height:1.4;letter-spacing:.5px;text-transform:uppercase}button{background:#ff00aa;color:#fff;border:none;padding:16px 48px;font-size:1.1rem;border-radius:50px;cursor:pointer;font-weight:bold;transition:background .2s,transform .1s;box-shadow:0 8px 20px rgba(255,0,170,.3);z-index:10}button:hover{background:#e60099}button:active{transform:scale(.97)}button:disabled{background:#555;box-shadow:none;cursor:not-allowed}</style></head><body><div class="scene"><div class="card" id="card"><div class="card-face card-back"></div><div class="card-face card-front" id="questionText">Загрузка...</div></div></div><button id="nextBtn" disabled>Загрузка...</button><script>const card=document.getElementById('card');const questionText=document.getElementById('questionText');const nextBtn=document.getElementById('nextBtn');let questions=[];let deck=[];let currentIndex=0;let isFlipped=false;function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}function resetDeck(){deck=shuffle([...questions]);currentIndex=0;}function nextCard(){if(isFlipped){card.classList.remove('is-flipped');isFlipped=false;nextBtn.textContent='Тянуть карту';return;}if(currentIndex>=deck.length){resetDeck();}questionText.textContent=deck[currentIndex++];card.classList.add('is-flipped');isFlipped=true;nextBtn.textContent='Следующая';}async function init(){try{const response=await fetch('questions.json');if(!response.ok)throw new Error('HTTP '+response.status);questions=await response.json();resetDeck();questionText.textContent='Нажми «Дальше»';nextBtn.disabled=false;nextBtn.textContent='Дальше';}catch(error){console.error('Ошибка загрузки:',error);questionText.textContent='Ошибка загрузки вопросов';nextBtn.textContent='Ошибка';}}nextBtn.addEventListener('click',nextCard);card.addEventListener('click',nextCard);init();</script></body></html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14100e">
+<meta name="description" content="Колода «Близость» — карточки с вопросами для глубоких разговоров.">
+<title>Колода «Близость»</title>
+<link rel="preload" href="questions.json" as="fetch" crossorigin>
+<style>
+  :root{
+    --bg:#14100e;
+    --paper:#f4f1ea;
+    --ink:#141414;
+    --muted:#8a8178;
+    --accent:#7ba88f;
+    --btn:#c85a7a;
+    --btn-dark:#a8455f;
+    --shadow:rgba(0,0,0,.55);
+    --back-photo:url('back.png');
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;
+    min-height:100dvh;
+    display:grid;
+    grid-template-rows:1fr auto;
+    place-items:center;
+    gap:clamp(20px,5vh,48px);
+    padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));
+    background:radial-gradient(120% 100% at 50% 0%,#241c18 0%,var(--bg) 60%);
+    color:var(--paper);
+    font:16px/1.4 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    overflow-x:hidden;
+  }
+
+  .scene{
+    width:min(86vw,340px);
+    aspect-ratio:2/3;
+    perspective:1400px;
+  }
+
+  .card{
+    all:unset;
+    display:block;
+    width:100%;
+    height:100%;
+    position:relative;
+    cursor:pointer;
+    border-radius:22px;
+    transform-style:preserve-3d;
+    transition:transform .7s cubic-bezier(.175,.885,.32,1.275);
+  }
+  .card.is-flipped{transform:rotateY(180deg)}
+  .card:focus-visible{outline:3px solid var(--paper);outline-offset:6px}
+
+  .card-face{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:22px;
+    overflow:hidden;
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    box-shadow:0 20px 45px -12px var(--shadow);
+  }
+
+  /* -------- Обратная сторона (лицо к игроку до флипа) -------- */
+  .card-back{
+    padding:9% 9% 14%;
+    background:
+      radial-gradient(120% 120% at 30% 15%,#fffdf7 0%,#f0ece1 55%,#e4ddce 100%);
+  }
+  .card-back::after{
+    content:"";
+    position:absolute;inset:0;
+    background-image:radial-gradient(rgba(0,0,0,.035) 1px,transparent 1px);
+    background-size:3px 3px;
+    mix-blend-mode:multiply;
+    pointer-events:none;
+  }
+  .polaroid{
+    position:relative;
+    width:100%;
+    background:#fff;
+    padding:7% 7% 16%;
+    border-radius:2px;
+    box-shadow:0 6px 20px rgba(0,0,0,.18),0 1px 0 rgba(0,0,0,.05);
+  }
+  .photo{
+    position:relative;
+    display:block;
+    aspect-ratio:1/1;
+    background:var(--back-photo) center/cover no-repeat;
+  }
+  .letters{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:.06em;
+    white-space:nowrap;
+  }
+  .letters[data-row="1"]{top:16%}
+  .letters[data-row="2"]{top:42%}
+  .letters > span{
+    display:inline-block;
+    padding:.12em .16em;
+    font:700 clamp(20px,6.8vw,30px)/1 "Times New Roman",Georgia,serif;
+    color:var(--ink);
+    background:#f8f6f0;
+    box-shadow:0 1px 3px rgba(0,0,0,.25);
+    transform:rotate(var(--r,0deg));
+  }
+  .sticker{
+    position:absolute;
+    left:42%;
+    bottom:5%;
+    padding:.3em .55em;
+    font:700 clamp(11px,3vw,14px)/1 ui-sans-serif,system-ui,sans-serif;
+    color:#fff;
+    background:var(--accent);
+    border-radius:2px;
+    transform:rotate(-6deg);
+    box-shadow:0 2px 6px rgba(0,0,0,.22);
+  }
+
+  /* -------- Лицевая сторона (вопрос) -------- */
+  .card-front{
+    transform:rotateY(180deg);
+    padding:9% 9%;
+    background:linear-gradient(180deg,#fffdf7,#f0ece1);
+    color:var(--ink);
+  }
+  .question{
+    display:block;
+    max-width:26ch;
+    margin:0;
+    font:600 clamp(1.05rem,4.4vw,1.35rem)/1.35 "Times New Roman",Georgia,serif;
+    letter-spacing:.01em;
+    text-transform:uppercase;
+    text-wrap:balance;
+  }
+
+  /* -------- Кнопка -------- */
+  #nextBtn{
+    all:unset;
+    min-width:200px;
+    padding:16px 44px;
+    text-align:center;
+    border-radius:999px;
+    font:700 1rem/1 ui-sans-serif,system-ui,sans-serif;
+    letter-spacing:.02em;
+    color:#fff;
+    background:linear-gradient(180deg,var(--btn),var(--btn-dark));
+    box-shadow:0 10px 25px -8px rgba(200,90,122,.6);
+    cursor:pointer;
+    transition:transform .15s,filter .2s,box-shadow .2s;
+  }
+  #nextBtn:hover:not(:disabled){filter:brightness(1.08)}
+  #nextBtn:active:not(:disabled){transform:translateY(1px) scale(.98)}
+  #nextBtn:focus-visible{outline:3px solid var(--paper);outline-offset:4px}
+  #nextBtn:disabled{background:#3a322e;color:var(--muted);box-shadow:none;cursor:not-allowed}
+
+  @media (prefers-reduced-motion:reduce){
+    .card{transition-duration:.01ms}
+    #nextBtn{transition:none}
+  }
+</style>
+</head>
+<body>
+
+  <div class="scene">
+    <button class="card" id="card" type="button" aria-label="Карта — нажмите, чтобы перевернуть">
+      <span class="card-face card-back" aria-hidden="true">
+        <span class="polaroid">
+          <span class="photo">
+            <span class="letters" data-row="1">
+              <span style="--r:-4deg">Б</span>
+              <span style="--r:2deg">Л</span>
+              <span style="--r:-2deg">И</span>
+              <span style="--r:3deg">З</span>
+              <span style="--r:-3deg">О</span>
+            </span>
+            <span class="letters" data-row="2">
+              <span style="--r:2deg">С</span>
+              <span style="--r:-2deg">Т</span>
+              <span style="--r:3deg">Ь</span>
+              <span style="--r:-5deg">—</span>
+            </span>
+          </span>
+          <span class="sticker">это</span>
+        </span>
+      </span>
+      <span class="card-face card-front">
+        <span class="question" id="questionText" aria-live="polite">Загрузка…</span>
+      </span>
+    </button>
+  </div>
+
+  <button id="nextBtn" type="button" disabled>Загрузка…</button>
+
+<script>
+(() => {
+  'use strict';
+
+  const card = document.getElementById('card');
+  const questionEl = document.getElementById('questionText');
+  const nextBtn = document.getElementById('nextBtn');
+
+  const FLIP_MS = 700;
+  const state = {
+    questions: [],
+    deck: [],
+    index: 0,
+    isFlipped: false,
+    isAnimating: false,
+    ready: false,
+  };
+
+  function shuffle(a){
+    for (let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function resetDeck(){
+    state.deck = shuffle(state.questions.slice());
+    state.index = 0;
+  }
+  function lock(ms){
+    state.isAnimating = true;
+    setTimeout(() => { state.isAnimating = false; }, ms);
+  }
+  function setLabel(text){ nextBtn.textContent = text; }
+
+  function showQuestion(){
+    if (state.index >= state.deck.length) resetDeck();
+    const q = state.deck[state.index++];
+    questionEl.textContent = q;
+    card.classList.add('is-flipped');
+    card.setAttribute('aria-label', 'Карта с вопросом — нажмите, чтобы вернуть рубашкой вверх');
+    state.isFlipped = true;
+    setLabel('Следующая');
+  }
+  function hideQuestion(){
+    card.classList.remove('is-flipped');
+    card.setAttribute('aria-label', 'Карта — нажмите, чтобы перевернуть');
+    state.isFlipped = false;
+    setLabel('Тянуть карту');
+  }
+
+  function onNext(){
+    if (!state.ready || state.isAnimating) return;
+    lock(FLIP_MS);
+    state.isFlipped ? hideQuestion() : showQuestion();
+  }
+
+  card.addEventListener('click', onNext);
+  nextBtn.addEventListener('click', () => {
+    if (!state.ready) { init(); return; }
+    onNext();
+  });
+
+  async function init(){
+    try {
+      if (location.protocol === 'file:'){
+        throw new Error('Открой через локальный сервер, не как файл (см. README).');
+      }
+      const res = await fetch('questions.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const list = Array.isArray(data)
+        ? data.filter(q => typeof q === 'string' && q.trim())
+        : [];
+      if (!list.length) throw new Error('Пустой или некорректный список вопросов');
+
+      state.questions = list;
+      resetDeck();
+      state.ready = true;
+
+      questionEl.textContent = 'Нажми «Тянуть карту»';
+      nextBtn.disabled = false;
+      setLabel('Тянуть карту');
+    } catch (err){
+      console.error('Ошибка загрузки:', err);
+      state.ready = false;
+      questionEl.textContent = 'Не удалось загрузить вопросы';
+      nextBtn.disabled = false;
+      nextBtn.textContent = 'Повторить';
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
