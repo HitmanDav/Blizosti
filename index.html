@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1a4830">
-<meta name="description" content="БЛИЖЕ — 50 карточек с вопросами для тёплого разговора.">
-<title>БЛИЖЕ — игра для сближения</title>
+<meta name="description" content="БЛИЖЕ — карточки с вопросами для тёплого разговора.">
+<title>БЛИЖЕ — карточки для разговора</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,25 +15,30 @@
 
 <style>
   :root{
+    /* Красное сукно: --felt-1:#7a1f24; --felt-2:#4a0f14; --felt-3:#210509; */
     --felt-1:#2d6b47;
     --felt-2:#1a4830;
     --felt-3:#0a2113;
 
     --paper:#fffdf7;
-    --ink:#1a1a1a;
+    --ink:#181818;
     --radius:16px;
-    --shadow:0 22px 44px -14px rgba(0,0,0,.65);
-    --ease:cubic-bezier(.175,.885,.32,1.275);
+    --shadow:0 22px 44px -14px rgba(0,0,0,.7);
+    --ease:cubic-bezier(.2,.9,.3,1.05);
+    --flip-ms:750ms;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{
     margin:0;
     min-height:100dvh;
-    display:grid;
-    place-items:center;
-    padding:24px max(16px,env(safe-area-inset-left))
-            calc(24px + env(safe-area-inset-bottom))
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:clamp(16px,3vh,32px);
+    padding:20px max(16px,env(safe-area-inset-left))
+            calc(20px + env(safe-area-inset-bottom))
             max(16px,env(safe-area-inset-right));
     background:radial-gradient(ellipse at 50% 35%,
       var(--felt-1) 0%, var(--felt-2) 55%, var(--felt-3) 100%);
@@ -42,6 +47,7 @@
     overflow-x:hidden;
     position:relative;
   }
+  /* тканевая текстура */
   body::before{
     content:"";position:fixed;inset:0;
     background-image:
@@ -49,11 +55,56 @@
       repeating-linear-gradient(-45deg, rgba(0,0,0,.035) 0 2px, transparent 2px 4px);
     pointer-events:none;z-index:0;
   }
+  /* виньетка */
   body::after{
     content:"";position:fixed;inset:0;
-    background:radial-gradient(ellipse at 50% 45%, transparent 40%, rgba(0,0,0,.5) 100%);
+    background:radial-gradient(ellipse at 50% 45%, transparent 42%, rgba(0,0,0,.55) 100%);
     pointer-events:none;z-index:0;
   }
+
+  /* ===== Шапка ===== */
+  .hud{
+    position:relative;z-index:2;
+    width:100%;max-width:900px;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:16px;
+    padding:0 4px;
+  }
+  .hud__title{
+    margin:0;
+    font-family:'Neucha','Segoe Print',cursive;
+    font-weight:400;
+    font-size:clamp(22px, 5vw, 30px);
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:#f6efe2;
+    text-shadow:0 2px 0 rgba(0,0,0,.35);
+  }
+  .hud__meta{
+    display:flex;align-items:center;gap:12px;
+  }
+  .hud__counter{
+    font-variant-numeric:tabular-nums;
+    font-size:clamp(12px, 3vw, 14px);
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.72);
+  }
+  .hud__counter b{color:#fff;font-weight:600}
+  .hud__reset{
+    appearance:none;border:none;
+    width:34px;height:34px;
+    border-radius:50%;
+    background:rgba(255,255,255,.08);
+    color:rgba(255,255,255,.8);
+    font-size:18px;line-height:1;
+    cursor:pointer;
+    display:grid;place-items:center;
+    transition:background .2s, color .2s, transform .2s;
+  }
+  .hud__reset:hover{background:rgba(255,255,255,.16);color:#fff}
+  .hud__reset:active{transform:scale(.92)}
+  .hud__reset:focus-visible{outline:2px solid rgba(255,255,255,.85);outline-offset:3px}
 
   /* ===== Стол ===== */
   .table{
@@ -77,44 +128,47 @@
     padding:0;border:none;background:transparent;
     cursor:pointer;
     transition:transform .2s ease;
+    border-radius:var(--radius);
   }
   .deck:hover:not(:disabled){transform:translateY(-4px)}
   .deck:active:not(:disabled){transform:translateY(-1px)}
   .deck:disabled{cursor:default}
-  .deck:focus-visible{
-    outline:3px solid rgba(255,255,255,.85);
-    outline-offset:8px;
-    border-radius:var(--radius);
-  }
-  .deck .layer{
+  .deck:focus-visible{outline:3px solid rgba(255,255,255,.85);outline-offset:8px}
+
+  .deck__layer{
     position:absolute;inset:0;
     border-radius:var(--radius);
     background:url('back.webp') center/cover no-repeat, #efe9dc;
-    border:1px solid rgba(0,0,0,.2);
-    box-shadow:0 10px 22px -10px rgba(0,0,0,.65),
-               inset 0 0 0 1px rgba(255,255,255,.08);
-    transition:transform .25s ease, opacity .3s ease;
+    border:1px solid rgba(0,0,0,.22);
+    box-shadow:0 10px 22px -10px rgba(0,0,0,.7);
+    transform:
+      translate(calc(var(--i,0) * -1.6px), calc(var(--i,0) * 1.6px))
+      rotate(calc(var(--i,0) * -0.25deg));
+    z-index:calc(100 - var(--i,0));
+    transition:transform .3s ease, opacity .3s ease;
   }
-  .deck .layer:nth-child(1){transform:translate(-4px, 4px) rotate(-1.4deg)}
-  .deck .layer:nth-child(2){transform:translate(-2px, 2px) rotate(-0.5deg)}
-  .deck .layer:nth-child(3){transform:translate(0,    0)   rotate(0.4deg)}
-
-  .deck:hover:not(:disabled) .layer:nth-child(1){transform:translate(-7px, 6px) rotate(-2.2deg)}
-  .deck:hover:not(:disabled) .layer:nth-child(3){transform:translate(1px, -3px) rotate(0.8deg)}
-
-  .deck.is-empty .layer{opacity:.18}
+  .deck:hover:not(:disabled) .deck__layer{
+    transform:
+      translate(calc(var(--i,0) * -2.4px), calc(var(--i,0) * 2.4px))
+      rotate(calc(var(--i,0) * -0.4deg));
+  }
+  .deck.is-empty{
+    cursor:default;
+  }
   .deck.is-empty::after{
     content:"Заново";
     position:absolute;inset:0;
-    display:flex;align-items:center;justify-content:center;
+    display:grid;place-items:center;
     border-radius:var(--radius);
-    border:2px dashed rgba(255,255,255,.28);
-    color:rgba(255,255,255,.55);
-    font-size:clamp(10px, 2.8vw, 13px);
-    letter-spacing:.14em;
+    border:2px dashed rgba(255,255,255,.3);
+    color:rgba(255,255,255,.75);
+    font-size:clamp(10px, 2.6vw, 12px);
+    letter-spacing:.16em;
     text-transform:uppercase;
+    background:rgba(0,0,0,.15);
     pointer-events:none;
   }
+  .deck.is-empty .deck__layer{opacity:.14}
 
   /* ===== Сцена с картой ===== */
   .scene{
@@ -122,88 +176,93 @@
     position:relative;
     width:min(50vw, 300px);
     aspect-ratio:2/3;
-    perspective:1600px;
+    perspective:1500px;
   }
-  .slot-hint{
+  .scene__hint{
     position:absolute;inset:0;
-    border:2px dashed rgba(255,255,255,.14);
+    border:2px dashed rgba(255,255,255,.16);
     border-radius:var(--radius);
-    display:flex;align-items:center;justify-content:center;
+    display:grid;place-items:center;
     text-align:center;
-    color:rgba(255,255,255,.42);
-    font-size:clamp(11px, 3.4vw, 14px);
-    letter-spacing:.1em;
+    color:rgba(255,255,255,.5);
+    font-size:clamp(11px, 3vw, 13px);
+    letter-spacing:.14em;
     text-transform:uppercase;
     padding:20px;
     transition:opacity .35s ease;
+    pointer-events:none;
   }
-  .scene.has-card .slot-hint{opacity:0;pointer-events:none}
+  .scene.has-card .scene__hint{opacity:0}
+
+  .scene__stage{
+    position:absolute;inset:0;
+    opacity:0;
+    transform:translate(-60px, -20px) scale(.85);
+    transition:opacity .3s ease, transform .5s var(--ease);
+    pointer-events:none;
+  }
+  .scene.has-card .scene__stage{
+    opacity:1;
+    transform:none;
+    pointer-events:auto;
+  }
+  /* уход в сброс — вправо вверх */
+  .scene.is-discarding .scene__stage{
+    opacity:0;
+    transform:translate(70px, -40px) scale(.75) rotate(14deg);
+    transition:opacity .4s ease, transform .45s ease-in;
+    pointer-events:none;
+  }
 
   .card{
     all:unset;
-    position:absolute;inset:0;
+    display:block;
+    width:100%;height:100%;
     border-radius:var(--radius);
     cursor:pointer;
     transform-style:preserve-3d;
-    transition:transform .75s var(--ease),
-               opacity .35s ease,
-               scale .45s var(--ease);
-    opacity:0;
-    scale:.8;
-    pointer-events:none;
+    transition:transform var(--flip-ms) var(--ease);
     box-shadow:var(--shadow);
-  }
-  .scene.has-card .card{
-    opacity:1;
-    scale:1;
-    pointer-events:auto;
+    will-change:transform;
   }
   .card.is-flipped{transform:rotateY(180deg)}
-  .card:focus-visible{
-    outline:3px solid rgba(255,255,255,.85);
-    outline-offset:8px;
-    border-radius:var(--radius);
-  }
+  .card:focus-visible{outline:3px solid rgba(255,255,255,.85);outline-offset:8px;border-radius:var(--radius)}
 
-  .card-face{
+  .face{
     position:absolute;inset:0;
     border-radius:var(--radius);
     overflow:hidden;
     backface-visibility:hidden;
     -webkit-backface-visibility:hidden;
-    border:1px solid rgba(0,0,0,.18);
+    border:1px solid rgba(0,0,0,.2);
   }
-  .card-back{
+  .face--back{
     background:url('back.webp') center/cover no-repeat, #efe9dc;
   }
-  .card-front{
+  .face--front{
     transform:rotateY(180deg);
     background:var(--paper);
     color:var(--ink);
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    display:flex;align-items:center;justify-content:center;
     padding:13% 11%;
     text-align:center;
-    position:relative;
     box-shadow:inset 0 0 0 6px rgba(0,0,0,.025);
   }
-  .card-front::before,
-  .card-front::after{
+  .face--front::before,
+  .face--front::after{
     content:"";
-    position:absolute;
-    width:22px;height:22px;
+    position:absolute;width:22px;height:22px;
     border:1px solid rgba(0,0,0,.14);
     border-radius:50%;
   }
-  .card-front::before{top:14px;left:14px}
-  .card-front::after{bottom:14px;right:14px}
+  .face--front::before{top:14px;left:14px}
+  .face--front::after{bottom:14px;right:14px}
 
   .question{
     display:block;margin:0;
     font-family:'Neucha','Segoe Print','Comic Sans MS',cursive;
     font-weight:400;
-    font-size:clamp(18px, 4.8vw, 26px);
+    font-size:clamp(19px, 4.9vw, 27px);
     line-height:1.5;
     color:var(--ink);
     text-wrap:balance;
@@ -220,70 +279,83 @@
     content:"";
     position:absolute;inset:0;
     border-radius:var(--radius);
-    border:2px dashed rgba(255,255,255,.14);
+    border:2px dashed rgba(255,255,255,.16);
     pointer-events:none;
   }
-  .discard .layer{
+  .discard__layer{
     position:absolute;inset:0;
     border-radius:var(--radius);
     background:url('back.webp') center/cover no-repeat, #efe9dc;
-    border:1px solid rgba(0,0,0,.2);
-    box-shadow:0 6px 16px -8px rgba(0,0,0,.55);
-    transform-origin:center;
+    border:1px solid rgba(0,0,0,.22);
+    box-shadow:0 6px 16px -8px rgba(0,0,0,.6);
+    transform:rotate(var(--rot, 0deg));
     animation:drop .4s ease-out both;
   }
   @keyframes drop{
-    from{opacity:0;transform:translateY(-40px) scale(.9) rotate(var(--rot, 0deg))}
-    to  {opacity:1;transform:translateY(0)     scale(1)  rotate(var(--rot, 0deg))}
+    from{opacity:0;transform:translate(30px,-30px) rotate(calc(var(--rot,0deg) + 20deg)) scale(.75)}
+    to  {opacity:1;transform:translate(0,0)      rotate(var(--rot,0deg))            scale(1)}
   }
 
   /* ===== Мобильная раскладка ===== */
   @media (max-width:640px){
+    body{gap:14px}
     .table{
       grid-template-columns:1fr 1fr;
       grid-template-areas:
         "deck discard"
         "card card";
-      row-gap:24px;
+      row-gap:22px;
       column-gap:14px;
       justify-items:center;
       max-width:440px;
     }
     .deck,.discard{width:min(26vw, 96px)}
-    .scene{width:min(80vw, 320px);margin-top:6px}
+    .scene{width:min(80vw, 320px);margin-top:4px}
+    .scene__stage{transform:translate(-20px, -60px) scale(.85)}
+    .scene.is-discarding .scene__stage{
+      transform:translate(20px, -60px) scale(.75) rotate(14deg);
+    }
   }
 
   @media (prefers-reduced-motion:reduce){
     .card{transition-duration:.001ms}
-    .deck{transition:none}
-    .deck .layer{transition:none}
-    .discard .layer{animation-duration:.001ms}
+    .scene__stage{transition-duration:.001ms}
+    .deck,.deck__layer{transition:none}
+    .discard__layer{animation-duration:.001ms}
   }
 </style>
 </head>
 <body>
 
-  <div class="table">
+  <header class="hud">
+    <h1 class="hud__title">Ближе</h1>
+    <div class="hud__meta">
+      <span class="hud__counter" aria-live="polite">
+        осталось <b id="leftCount">–</b> / <b id="totalCount">–</b>
+      </span>
+      <button class="hud__reset" id="resetBtn" type="button" aria-label="Начать заново" title="Начать заново">↻</button>
+    </div>
+  </header>
 
-    <button class="deck" id="deckBtn" type="button" aria-label="Колода. Нажми, чтобы взять карту">
-      <span class="layer" aria-hidden="true"></span>
-      <span class="layer" aria-hidden="true"></span>
-      <span class="layer" aria-hidden="true"></span>
-    </button>
+  <main class="table">
+
+    <button class="deck" id="deckBtn" type="button" aria-label="Колода. Взять карту"></button>
 
     <div class="scene" id="scene">
-      <div class="slot-hint" aria-hidden="true">Нажми<br>на колоду</div>
-      <button class="card" id="card" type="button" aria-label="Карта">
-        <span class="card-face card-back" aria-hidden="true"></span>
-        <span class="card-face card-front">
-          <span class="question" id="questionText" aria-live="polite"></span>
-        </span>
-      </button>
+      <div class="scene__hint" aria-hidden="true">Потяни карту</div>
+      <div class="scene__stage">
+        <button class="card" id="card" type="button" aria-label="Карта">
+          <span class="face face--back" aria-hidden="true"></span>
+          <span class="face face--front">
+            <span class="question" id="questionText" aria-live="polite"></span>
+          </span>
+        </button>
+      </div>
     </div>
 
     <div class="discard" id="discardPile" aria-hidden="true"></div>
 
-  </div>
+  </main>
 
 <script>
 (() => {
@@ -295,18 +367,22 @@
     card:     document.getElementById('card'),
     question: document.getElementById('questionText'),
     discard:  document.getElementById('discardPile'),
+    leftCount:document.getElementById('leftCount'),
+    totalCount:document.getElementById('totalCount'),
+    reset:    document.getElementById('resetBtn'),
   };
 
   const FLIP_MS    = 750;
-  const DISCARD_MS = 400;
-  const MAX_LAYERS = 10;
+  const DISCARD_MS = 450;
+  const MAX_LAYERS = 6;   // сколько декоративных слоёв максимум рисуем в колоде/сбросе
 
+  /** phase: idle | drawn | flipped | busy */
   const state = {
     questions: [],
     deck:      [],
     discard:   [],
     current:   '',
-    phase:     'idle',   // idle | drawn | flipped | busy
+    phase:     'idle',
     ready:     false,
   };
 
@@ -324,42 +400,82 @@
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   }
 
-  /* ---------- Состояние UI ---------- */
-  function syncDeck(){
-    const empty = state.deck.length === 0;
+  /* ---------- Рендер: колода ---------- */
+  function renderDeck(){
+    const n = state.deck.length;
+    const total = state.questions.length || 1;
+    // число видимых слоёв: 1..MAX_LAYERS в зависимости от остатка
+    const layers = n === 0 ? 0
+                 : Math.max(1, Math.min(MAX_LAYERS, Math.ceil(n / total * MAX_LAYERS)));
+
+    let html = '';
+    for (let i = 0; i < layers; i++){
+      html += `<span class="deck__layer" style="--i:${i}" aria-hidden="true"></span>`;
+    }
+    els.deck.innerHTML = html;
+
+    const empty = n === 0;
     els.deck.classList.toggle('is-empty', empty);
     els.deck.disabled = !state.ready || state.phase !== 'idle';
-    els.deck.setAttribute(
-      'aria-label',
-      empty
-        ? 'Колода пуста. Нажми, чтобы перемешать заново'
-        : 'Колода. Нажми, чтобы взять карту'
+    els.deck.setAttribute('aria-label',
+      !state.ready
+        ? 'Загрузка колоды'
+        : empty
+          ? (state.discard.length ? 'Колода пуста. Перемешать сброс' : 'Колода пуста')
+          : `Колода. Взять карту. Осталось ${n}`
     );
+  }
+
+  /* ---------- Рендер: сброс ---------- */
+  function renderDiscard(){
+    const n = state.discard.length;
+    const total = state.questions.length || 1;
+    const layers = n === 0 ? 0
+                 : Math.max(1, Math.min(MAX_LAYERS, Math.ceil(n / total * MAX_LAYERS)));
+
+    let html = '';
+    for (let i = 0; i < layers; i++){
+      const rot = (Math.random() * 14 - 7).toFixed(2) + 'deg';
+      html += `<span class="discard__layer" style="--rot:${rot}" aria-hidden="true"></span>`;
+    }
+    els.discard.innerHTML = html;
+  }
+
+  /* ---------- Рендер: счётчик ---------- */
+  function renderCounter(){
+    els.leftCount.textContent  = state.deck.length;
+    els.totalCount.textContent = state.questions.length;
+  }
+
+  function renderAll(){
+    renderDeck();
+    renderCounter();
   }
 
   /* ---------- Действия ---------- */
   function drawCard(){
     if (!state.ready || state.phase !== 'idle') return;
 
-    // Колода пуста — перемешиваем сброс
+    // если колода пуста — перемешиваем сброс
     if (state.deck.length === 0){
       if (state.discard.length === 0) return;
       state.deck = shuffle(state.discard);
       state.discard = [];
-      els.discard.innerHTML = '';
+      renderDiscard();
     }
 
     state.current = state.deck.pop();
     els.question.textContent = sentenceCase(state.current);
     els.card.classList.remove('is-flipped');
-    els.card.setAttribute('aria-label', 'Карта. Нажми, чтобы перевернуть');
+    els.card.setAttribute('aria-label', 'Карта рубашкой вверх. Нажми, чтобы перевернуть');
 
-    // ре-флоу, чтобы transition сработал с нуля
+    // перезапуск анимации появления
+    els.scene.classList.remove('has-card');
     void els.scene.offsetWidth;
     els.scene.classList.add('has-card');
 
     state.phase = 'drawn';
-    syncDeck();
+    renderAll();
   }
 
   function flipCard(){
@@ -372,30 +488,34 @@
   function discardCard(){
     if (state.phase !== 'flipped') return;
     state.phase = 'busy';
-    syncDeck();
+    renderDeck(); // дизейблим колоду
 
     state.discard.push(state.current);
-    pushDiscardLayer();
-    els.scene.classList.remove('has-card');
+    renderDiscard();
+
+    els.scene.classList.add('is-discarding');
 
     setTimeout(() => {
+      els.scene.classList.remove('has-card', 'is-discarding');
       els.card.classList.remove('is-flipped');
       els.question.textContent = '';
       state.current = '';
       state.phase = 'idle';
-      syncDeck();
+      renderAll();
     }, DISCARD_MS);
   }
 
-  function pushDiscardLayer(){
-    const layer = document.createElement('span');
-    layer.className = 'layer';
-    const rot = (Math.random() * 14 - 7).toFixed(2) + 'deg';
-    layer.style.setProperty('--rot', rot);
-    els.discard.appendChild(layer);
-
-    const layers = els.discard.querySelectorAll('.layer');
-    if (layers.length > MAX_LAYERS) layers[0].remove();
+  function resetGame(){
+    if (!state.ready) return;
+    state.deck = shuffle(state.questions);
+    state.discard = [];
+    state.current = '';
+    state.phase = 'idle';
+    els.scene.classList.remove('has-card', 'is-discarding');
+    els.card.classList.remove('is-flipped');
+    els.question.textContent = '';
+    renderDiscard();
+    renderAll();
   }
 
   /* ---------- Обработчики ---------- */
@@ -409,9 +529,11 @@
     else if (state.phase === 'flipped') discardCard();
   });
 
+  els.reset.addEventListener('click', resetGame);
+
   /* ---------- Инициализация ---------- */
   async function init(){
-    syncDeck();
+    renderAll();
     try {
       const res = await fetch('questions.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -425,14 +547,14 @@
       state.deck      = shuffle(list);
       state.ready     = true;
     } catch (err) {
-      console.error('Ошибка загрузки:', err);
+      console.error('Ошибка загрузки вопросов:', err);
       els.question.textContent = 'Не удалось загрузить вопросы';
       els.scene.classList.add('has-card');
       els.card.classList.add('is-flipped');
       els.card.disabled = true;
       els.card.style.cursor = 'default';
     }
-    syncDeck();
+    renderAll();
   }
 
   init();
