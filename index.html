@@ -3,167 +3,186 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#14100e">
-<meta name="description" content="Колода «Близость» — карточки с вопросами для глубоких разговоров.">
-<title>Колода «Близость»</title>
+<meta name="theme-color" content="#1a1a1a">
+<meta name="description" content="БЛИЖЕ — 50 карточек с вопросами для тёплого разговора.">
+<title>БЛИЖЕ — игра для сближения</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Neucha&display=swap" rel="stylesheet">
+
 <link rel="preload" href="questions.json" as="fetch" crossorigin>
+<link rel="preload" href="back.png" as="image">
+
 <style>
   :root{
-    --bg:#14100e;
-    --paper:#f4f1ea;
-    --ink:#141414;
-    --muted:#8a8178;
-    --accent:#7ba88f;
-    --btn:#c85a7a;
-    --btn-dark:#a8455f;
-    --shadow:rgba(0,0,0,.55);
-    --back-photo:url('back.png');
+    --bg:#161311;
+    --paper:#f6f2ea;
+    --ink:#15110e;
+    --muted:#8d8377;
+    --btn:#c2537a;
+    --btn-dark:#9c3f60;
+    --radius:22px;
+    --shadow:0 24px 50px -18px rgba(0,0,0,.65);
+    --strip:#fdfaf0;
+    --strip-ink:#1c1712;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{
     margin:0;
     min-height:100dvh;
-    display:grid;
-    grid-template-rows:1fr auto;
-    place-items:center;
-    gap:clamp(20px,5vh,48px);
-    padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));
-    background:radial-gradient(120% 100% at 50% 0%,#241c18 0%,var(--bg) 60%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:clamp(18px,4vh,36px);
+    padding:24px max(16px,env(safe-area-inset-left))
+            calc(24px + env(safe-area-inset-bottom))
+            max(16px,env(safe-area-inset-right));
+    background:
+      radial-gradient(120% 80% at 50% 0%, #2a221d 0%, #161311 55%, #0d0b0a 100%);
     color:var(--paper);
     font:16px/1.4 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
     overflow-x:hidden;
   }
 
+  /* ---------- Сцена и карта ---------- */
   .scene{
-    width:min(86vw,340px);
+    width:min(86vw, 340px);
     aspect-ratio:2/3;
     perspective:1400px;
+  }
+  @media (min-width:520px) and (min-height:780px){
+    .scene{width:min(80vw, 360px)}
   }
 
   .card{
     all:unset;
     display:block;
+    position:relative;
     width:100%;
     height:100%;
-    position:relative;
+    border-radius:var(--radius);
     cursor:pointer;
-    border-radius:22px;
     transform-style:preserve-3d;
     transition:transform .7s cubic-bezier(.175,.885,.32,1.275);
+    box-shadow:var(--shadow);
   }
   .card.is-flipped{transform:rotateY(180deg)}
-  .card:focus-visible{outline:3px solid var(--paper);outline-offset:6px}
+  .card:focus-visible{outline:3px solid var(--paper);outline-offset:8px;border-radius:var(--radius)}
 
   .card-face{
     position:absolute;inset:0;
-    display:flex;align-items:center;justify-content:center;
-    border-radius:22px;
+    border-radius:var(--radius);
     overflow:hidden;
     backface-visibility:hidden;
     -webkit-backface-visibility:hidden;
-    box-shadow:0 20px 45px -12px var(--shadow);
   }
 
-  /* -------- Обратная сторона (лицо к игроку до флипа) -------- */
+  /* ---------- Рубашка: твой back.png ---------- */
   .card-back{
-    padding:9% 9% 14%;
     background:
-      radial-gradient(120% 120% at 30% 15%,#fffdf7 0%,#f0ece1 55%,#e4ddce 100%);
+      url('back.png') center/cover no-repeat,
+      radial-gradient(120% 120% at 30% 20%, #fdfaf0 0%, #efe9dc 60%, #ddd4c1 100%);
+    /* лёгкая «картонная» текстура поверх, если захочешь — убери */
   }
   .card-back::after{
     content:"";
     position:absolute;inset:0;
-    background-image:radial-gradient(rgba(0,0,0,.035) 1px,transparent 1px);
-    background-size:3px 3px;
-    mix-blend-mode:multiply;
+    background:radial-gradient(120% 100% at 50% 30%, transparent 55%, rgba(0,0,0,.08) 100%);
     pointer-events:none;
   }
-  .polaroid{
-    position:relative;
-    width:100%;
-    background:#fff;
-    padding:7% 7% 16%;
-    border-radius:2px;
-    box-shadow:0 6px 20px rgba(0,0,0,.18),0 1px 0 rgba(0,0,0,.05);
-  }
-  .photo{
-    position:relative;
-    display:block;
-    aspect-ratio:1/1;
-    background:var(--back-photo) center/cover no-repeat;
-  }
-  .letters{
-    position:absolute;
-    left:50%;
-    transform:translateX(-50%);
-    display:flex;
-    gap:.06em;
-    white-space:nowrap;
-  }
-  .letters[data-row="1"]{top:16%}
-  .letters[data-row="2"]{top:42%}
-  .letters > span{
-    display:inline-block;
-    padding:.12em .16em;
-    font:700 clamp(20px,6.8vw,30px)/1 "Times New Roman",Georgia,serif;
-    color:var(--ink);
-    background:#f8f6f0;
-    box-shadow:0 1px 3px rgba(0,0,0,.25);
-    transform:rotate(var(--r,0deg));
-  }
-  .sticker{
-    position:absolute;
-    left:42%;
-    bottom:5%;
-    padding:.3em .55em;
-    font:700 clamp(11px,3vw,14px)/1 ui-sans-serif,system-ui,sans-serif;
-    color:#fff;
-    background:var(--accent);
-    border-radius:2px;
-    transform:rotate(-6deg);
-    box-shadow:0 2px 6px rgba(0,0,0,.22);
-  }
 
-  /* -------- Лицевая сторона (вопрос) -------- */
+  /* ---------- Лицо: фото + бумажные полоски ---------- */
   .card-front{
     transform:rotateY(180deg);
-    padding:9% 9%;
-    background:linear-gradient(180deg,#fffdf7,#f0ece1);
-    color:var(--ink);
+    background:#efe9dc;
   }
-  .question{
-    display:block;
-    max-width:26ch;
-    margin:0;
-    font:600 clamp(1.05rem,4.4vw,1.35rem)/1.35 "Times New Roman",Georgia,serif;
-    letter-spacing:.01em;
-    text-transform:uppercase;
-    text-wrap:balance;
+  .card-photo{
+    position:absolute;inset:0;
+    background:var(--bg-photo, linear-gradient(180deg,#a8c0a0,#5f8058 55%,#2f4032));
+    background-size:cover;
+    background-position:center;
+  }
+  .card-photo::after{
+    content:"";
+    position:absolute;inset:0;
+    background:
+      radial-gradient(120% 100% at 50% 40%, transparent 45%, rgba(0,0,0,.38) 100%);
+    pointer-events:none;
   }
 
-  /* -------- Кнопка -------- */
+  .card-strips{
+    position:relative;
+    z-index:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    height:100%;
+    padding:12% 8%;
+    text-align:center;
+  }
+
+  .question{
+    font-family:'Neucha','Segoe Print','Comic Sans MS',cursive;
+    font-weight:400;
+    font-size:clamp(20px, 5.4vw, 28px);
+    line-height:1.75;
+    color:var(--strip-ink);
+    letter-spacing:.01em;
+    text-wrap:balance;
+  }
+  .question > span{
+    display:inline;
+    background:var(--strip);
+    padding:.08em .32em;
+    box-shadow:0 1px 2px rgba(0,0,0,.18);
+    box-decoration-break:clone;
+    -webkit-box-decoration-break:clone;
+  }
+
+  /* ---------- Подпись и кнопка ---------- */
+  .controls{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    width:100%;
+    max-width:340px;
+  }
+  .counter{
+    font-size:.82rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-variant-numeric:tabular-nums;
+  }
+
   #nextBtn{
     all:unset;
-    min-width:200px;
-    padding:16px 44px;
+    display:block;
+    width:100%;
+    padding:16px 32px;
     text-align:center;
     border-radius:999px;
     font:700 1rem/1 ui-sans-serif,system-ui,sans-serif;
     letter-spacing:.02em;
     color:#fff;
     background:linear-gradient(180deg,var(--btn),var(--btn-dark));
-    box-shadow:0 10px 25px -8px rgba(200,90,122,.6);
+    box-shadow:0 12px 28px -10px rgba(194,83,122,.7);
     cursor:pointer;
-    transition:transform .15s,filter .2s,box-shadow .2s;
+    transition:transform .15s, filter .2s;
+    user-select:none;
   }
-  #nextBtn:hover:not(:disabled){filter:brightness(1.08)}
-  #nextBtn:active:not(:disabled){transform:translateY(1px) scale(.98)}
+  #nextBtn:hover:not(:disabled){filter:brightness(1.07)}
+  #nextBtn:active:not(:disabled){transform:translateY(1px) scale(.985)}
   #nextBtn:focus-visible{outline:3px solid var(--paper);outline-offset:4px}
   #nextBtn:disabled{background:#3a322e;color:var(--muted);box-shadow:none;cursor:not-allowed}
 
   @media (prefers-reduced-motion:reduce){
-    .card{transition-duration:.01ms}
+    .card{transition-duration:.001ms}
     #nextBtn{transition:none}
   }
 </style>
@@ -171,52 +190,67 @@
 <body>
 
   <div class="scene">
-    <button class="card" id="card" type="button" aria-label="Карта — нажмите, чтобы перевернуть">
-      <span class="card-face card-back" aria-hidden="true">
-        <span class="polaroid">
-          <span class="photo">
-            <span class="letters" data-row="1">
-              <span style="--r:-4deg">Б</span>
-              <span style="--r:2deg">Л</span>
-              <span style="--r:-2deg">И</span>
-              <span style="--r:3deg">З</span>
-              <span style="--r:-3deg">О</span>
-            </span>
-            <span class="letters" data-row="2">
-              <span style="--r:2deg">С</span>
-              <span style="--r:-2deg">Т</span>
-              <span style="--r:3deg">Ь</span>
-              <span style="--r:-5deg">—</span>
-            </span>
-          </span>
-          <span class="sticker">это</span>
-        </span>
-      </span>
+    <button class="card" id="card" type="button" aria-label="Рубашка карты. Нажмите, чтобы перевернуть">
+      <span class="card-face card-back" aria-hidden="true"></span>
       <span class="card-face card-front">
-        <span class="question" id="questionText" aria-live="polite">Загрузка…</span>
+        <span class="card-photo" id="cardPhoto" aria-hidden="true"></span>
+        <span class="card-strips">
+          <span class="question" id="questionText" aria-live="polite">Загрузка…</span>
+        </span>
       </span>
     </button>
   </div>
 
-  <button id="nextBtn" type="button" disabled>Загрузка…</button>
+  <div class="controls">
+    <div class="counter" id="counter">— / —</div>
+    <button id="nextBtn" type="button" disabled>Загрузка…</button>
+  </div>
 
 <script>
 (() => {
   'use strict';
 
-  const card = document.getElementById('card');
+  const card       = document.getElementById('card');
+  const photoEl    = document.getElementById('cardPhoto');
   const questionEl = document.getElementById('questionText');
-  const nextBtn = document.getElementById('nextBtn');
+  const counterEl  = document.getElementById('counter');
+  const nextBtn    = document.getElementById('nextBtn');
 
   const FLIP_MS = 700;
+
+  /* Палитра «фото-подложек» — пока нет своих картинок.
+     Порядок не менять: хэш вопроса привязан к этим строкам. */
+  const BACKDROPS = [
+    'linear-gradient(180deg,#f2c58a 0%,#c97b5a 45%,#4a3550 100%)',   /* закат */
+    'linear-gradient(180deg,#a8c0a0 0%,#5f8058 55%,#2f4032 100%)',   /* лес */
+    'linear-gradient(180deg,#8fa4c4 0%,#4a5f8a 50%,#1e2740 100%)',   /* ночь */
+    'linear-gradient(180deg,#e8d4a8 0%,#b8a060 50%,#5a4820 100%)',   /* поле */
+    'linear-gradient(180deg,#d9905a 0%,#a85f3a 50%,#3a2015 100%)',   /* осень */
+    'linear-gradient(180deg,#b8d4e4 0%,#6b8fa8 55%,#2a3d4f 100%)',   /* море */
+    'linear-gradient(180deg,#f4e4c8 0%,#d8b890 45%,#7a5a38 100%)',   /* тёплый свет */
+    'linear-gradient(180deg,#e8a8a0 0%,#b87890 50%,#3a2848 100%)'    /* сумерки */
+  ];
+
   const state = {
     questions: [],
     deck: [],
     index: 0,
     isFlipped: false,
     isAnimating: false,
-    ready: false,
+    ready: false
   };
+
+  function hash(str){
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  }
+
+  function sentenceCase(text){
+    const t = String(text).trim().toLowerCase();
+    if (!t) return '';
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
 
   function shuffle(a){
     for (let i = a.length - 1; i > 0; i--){
@@ -225,30 +259,43 @@
     }
     return a;
   }
+
   function resetDeck(){
     state.deck = shuffle(state.questions.slice());
     state.index = 0;
   }
+
+  function updateCounter(){
+    const total = state.deck.length;
+    const shown = Math.min(state.index, total);
+    counterEl.textContent = total ? `${shown} / ${total}` : '— / —';
+  }
+
   function lock(ms){
     state.isAnimating = true;
     setTimeout(() => { state.isAnimating = false; }, ms);
   }
-  function setLabel(text){ nextBtn.textContent = text; }
 
   function showQuestion(){
     if (state.index >= state.deck.length) resetDeck();
-    const q = state.deck[state.index++];
-    questionEl.textContent = q;
+    const raw = state.deck[state.index++];
+    const text = sentenceCase(raw);
+
+    questionEl.textContent = text;
+    photoEl.style.setProperty('--bg-photo', BACKDROPS[hash(text) % BACKDROPS.length]);
+
     card.classList.add('is-flipped');
-    card.setAttribute('aria-label', 'Карта с вопросом — нажмите, чтобы вернуть рубашкой вверх');
+    card.setAttribute('aria-label', 'Карта с вопросом. Нажмите, чтобы вернуть рубашкой вверх');
     state.isFlipped = true;
-    setLabel('Следующая');
+    nextBtn.textContent = 'Следующая';
+    updateCounter();
   }
+
   function hideQuestion(){
     card.classList.remove('is-flipped');
-    card.setAttribute('aria-label', 'Карта — нажмите, чтобы перевернуть');
+    card.setAttribute('aria-label', 'Рубашка карты. Нажмите, чтобы перевернуть');
     state.isFlipped = false;
-    setLabel('Тянуть карту');
+    nextBtn.textContent = 'Тянуть карту';
   }
 
   function onNext(){
@@ -259,30 +306,31 @@
 
   card.addEventListener('click', onNext);
   nextBtn.addEventListener('click', () => {
-    if (!state.ready) { init(); return; }
+    if (!state.ready){ init(); return; }
     onNext();
   });
 
   async function init(){
+    nextBtn.disabled = true;
+    nextBtn.textContent = 'Загрузка…';
     try {
-      if (location.protocol === 'file:'){
-        throw new Error('Открой через локальный сервер, не как файл (см. README).');
-      }
       const res = await fetch('questions.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       const list = Array.isArray(data)
-        ? data.filter(q => typeof q === 'string' && q.trim())
+        ? data.filter(q => typeof q === 'string' && q.trim().length > 0)
         : [];
-      if (!list.length) throw new Error('Пустой или некорректный список вопросов');
+      if (!list.length) throw new Error('Пустой список вопросов');
 
       state.questions = list;
       resetDeck();
       state.ready = true;
 
       questionEl.textContent = 'Нажми «Тянуть карту»';
+      photoEl.style.setProperty('--bg-photo', BACKDROPS[0]);
       nextBtn.disabled = false;
-      setLabel('Тянуть карту');
+      nextBtn.textContent = 'Тянуть карту';
+      updateCounter();
     } catch (err){
       console.error('Ошибка загрузки:', err);
       state.ready = false;
